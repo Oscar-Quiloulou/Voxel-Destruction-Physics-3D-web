@@ -5,6 +5,7 @@ import { RaycastVehicle } from "./vehicles";
 import { Ragdoll } from "./ragdoll";
 import { Explosive } from "./explosives";
 import { WorldData } from "./world";
+import { snapToGrid } from "./grid";
 
 const keys: Record<string, boolean> = {};
 let selectedObject: THREE.Object3D | null = null;
@@ -61,9 +62,6 @@ export function startEditor(app: HTMLElement) {
   ui.innerHTML = `
     <h2>Éditeur</h2>
     <button id="addBlock">Ajouter bloc</button>
-    <button id="addVehicle">Ajouter véhicule</button>
-    <button id="addRagdoll">Ajouter ragdoll</button>
-    <button id="addExplosive">Ajouter explosif</button>
     <button id="resetWorld">Reset monde</button>
     <p>Flèches : déplacer l’objet sélectionné</p>
     <p>A / E : rotation Y</p>
@@ -73,21 +71,17 @@ export function startEditor(app: HTMLElement) {
 
   // Ajout bloc
   document.getElementById("addBlock")?.addEventListener("click", () => {
-    const pos = new THREE.Vector3(0, 1, 0);
+    let pos = new THREE.Vector3(0, 1, 0);
+    pos = snapToGrid(pos);
+
+    // Vérifier superposition
+    const exists = WorldData.blocks.some(b =>
+      b.position.distanceTo(pos) < 0.1
+    );
+    if (exists) return;
+
     structure.addBlock(1, "stone", pos);
     WorldData.addBlock(1, "stone", pos);
-  });
-
-  document.getElementById("addVehicle")?.addEventListener("click", () => {
-    new RaycastVehicle(scene, new THREE.Vector3(0, 1, 0));
-  });
-
-  document.getElementById("addRagdoll")?.addEventListener("click", () => {
-    new Ragdoll(scene, new THREE.Vector3(0, 1, 0));
-  });
-
-  document.getElementById("addExplosive")?.addEventListener("click", () => {
-    new Explosive(scene, new THREE.Vector3(0, 1, 0));
   });
 
   document.getElementById("resetWorld")?.addEventListener("click", () => {
@@ -110,7 +104,6 @@ export function startEditor(app: HTMLElement) {
 
     if (intersects.length > 0) {
       selectedObject = intersects[0].object;
-      console.log("Objet sélectionné :", selectedObject);
     }
   });
 
@@ -131,6 +124,11 @@ export function startEditor(app: HTMLElement) {
         scene.remove(selectedObject);
         selectedObject = null;
       }
+
+      // Snap automatique
+      selectedObject.position.copy(
+        snapToGrid(selectedObject.position)
+      );
     }
 
     voxelEngine.update();
