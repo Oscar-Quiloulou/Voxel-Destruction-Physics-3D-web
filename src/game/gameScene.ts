@@ -95,10 +95,12 @@ export function startGame(app: HTMLElement) {
     const dt = (now - last) / 1000;
     last = now;
 
-    if (keys["z"]) player.moveForward(dt);
-    if (keys["s"]) player.moveBackward(dt);
-    if (keys["q"]) player.moveLeft(dt);
-    if (keys["d"]) player.moveRight(dt);
+// MOVEMENT (ZQSD + flèches)
+if (keys["z"] || keys["ArrowUp"]) player.moveForward(dt);
+if (keys["s"] || keys["ArrowDown"]) player.moveBackward(dt);
+if (keys["q"] || keys["ArrowLeft"]) player.moveLeft(dt);
+if (keys["d"] || keys["ArrowRight"]) player.moveRight(dt);
+
 
     physics.step(dt);
     player.update();
