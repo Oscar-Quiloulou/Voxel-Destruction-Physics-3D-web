@@ -13,7 +13,6 @@ export class Explosive {
     this.radius = radius;
     this.strength = strength;
 
-    // THREE mesh
     this.mesh = new THREE.Mesh(
       new THREE.SphereGeometry(0.3),
       new THREE.MeshStandardMaterial({ color: 0xff0000 })
@@ -21,7 +20,6 @@ export class Explosive {
     this.mesh.position.copy(position);
     scene.add(this.mesh);
 
-    // Physics body
     this.body = new CANNON.Body({
       mass: 1,
       shape: new CANNON.Sphere(0.3)
@@ -34,7 +32,6 @@ export class Explosive {
     if (this.exploded) return;
     this.exploded = true;
 
-    // Onde de choc
     physics.applyExplosionForce(
       new CANNON.Vec3(
         this.body.position.x,
@@ -45,14 +42,12 @@ export class Explosive {
       this.strength
     );
 
-    // Effet visuel simple
-    const flash = new THREE.PointLight(0xffaa00, 5, 20);
+    const flash = new THREE.PointLight(0xffaa00, 10, 40);
     flash.position.copy(this.mesh.position);
     scene.add(flash);
 
-    setTimeout(() => scene.remove(flash), 200);
+    setTimeout(() => scene.remove(flash), 300);
 
-    // Remove explosive
     scene.remove(this.mesh);
     physics.removeBody(this.body);
   }

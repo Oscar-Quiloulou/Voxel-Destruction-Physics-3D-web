@@ -37,29 +37,23 @@ export function startEditor(app: HTMLElement) {
     <button id="addVehicle">Ajouter véhicule</button>
     <button id="addRagdoll">Ajouter ragdoll</button>
     <button id="addExplosive">Ajouter explosif</button>
-    <button id="save">Sauvegarder</button>
   `;
   app.appendChild(ui);
 
   document.getElementById("addBlock")?.addEventListener("click", () => {
-    const block = structure.addBlock(1, "stone", new THREE.Vector3(0, 5, 0));
-    console.log("Bloc ajouté", block);
+    structure.addBlock(1, "stone", new THREE.Vector3(0, 1, 0));
   });
 
   document.getElementById("addVehicle")?.addEventListener("click", () => {
-    new RaycastVehicle(scene, new THREE.Vector3(0, 5, 0));
+    new RaycastVehicle(scene, new THREE.Vector3(0, 1, 0));
   });
 
   document.getElementById("addRagdoll")?.addEventListener("click", () => {
-    new Ragdoll(scene, new THREE.Vector3(0, 5, 0));
+    new Ragdoll(scene, new THREE.Vector3(0, 1, 0));
   });
 
   document.getElementById("addExplosive")?.addEventListener("click", () => {
-    new Explosive(scene, new THREE.Vector3(0, 5, 0));
-  });
-
-  document.getElementById("save")?.addEventListener("click", () => {
-    alert("Sauvegarde non implémentée (à venir)");
+    new Explosive(scene, new THREE.Vector3(0, 1, 0));
   });
 
   function animate() {
