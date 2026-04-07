@@ -10,7 +10,6 @@ export class Player {
   canJump = false;
 
   constructor(scene: THREE.Scene, app: HTMLElement) {
-    // CAMERA FPS
     this.camera = new THREE.PerspectiveCamera(
       70,
       app.clientWidth / app.clientHeight,
@@ -18,7 +17,6 @@ export class Player {
       1000
     );
 
-    // PHYSICS BODY
     const shape = new CANNON.Sphere(0.5);
     this.body = new CANNON.Body({
       mass: 5,
@@ -28,7 +26,6 @@ export class Player {
 
     physics.addBody(this.body);
 
-    // DETECT GROUND CONTACT
     this.body.addEventListener("collide", () => {
       this.canJump = true;
     });
@@ -37,7 +34,6 @@ export class Player {
   }
 
   update() {
-    // Sync camera to body
     this.camera.position.set(
       this.body.position.x,
       this.body.position.y + 0.5,
