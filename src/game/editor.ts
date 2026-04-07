@@ -4,13 +4,14 @@ import { BuildingStructure } from "./buildings";
 import { RaycastVehicle } from "./vehicles";
 import { Ragdoll } from "./ragdoll";
 import { Explosive } from "./explosives";
+import { WorldData } from "./world";
 
 export function startEditor(app: HTMLElement) {
   app.innerHTML = "";
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(70, app.clientWidth / app.clientHeight, 0.1, 1000);
-  camera.position.set(10, 10, 10);
+  camera.position.set(15, 20, 15);
   camera.lookAt(0, 0, 0);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -21,9 +22,25 @@ export function startEditor(app: HTMLElement) {
   light.position.set(10, 20, 10);
   scene.add(light);
 
+  const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambient);
+
+  // Sol visuel
+  const groundGeo = new THREE.PlaneGeometry(500, 500);
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  scene.add(ground);
+
   const voxelEngine = new VoxelEngine(scene);
   const structure = new BuildingStructure(scene);
 
+  // Charger les blocs existants
+  WorldData.blocks.forEach(b => {
+    structure.addBlock(b.size, b.material, b.position.clone());
+  });
+
+  // UI
   const ui = document.createElement("div");
   ui.style.position = "absolute";
   ui.style.top = "60px";
@@ -37,11 +54,15 @@ export function startEditor(app: HTMLElement) {
     <button id="addVehicle">Ajouter véhicule</button>
     <button id="addRagdoll">Ajouter ragdoll</button>
     <button id="addExplosive">Ajouter explosif</button>
+    <button id="resetWorld">Reset monde</button>
   `;
   app.appendChild(ui);
 
+  // Ajouter bloc
   document.getElementById("addBlock")?.addEventListener("click", () => {
-    structure.addBlock(1, "stone", new THREE.Vector3(0, 1, 0));
+    const pos = new THREE.Vector3(0, 1, 0);
+    structure.addBlock(1, "stone", pos);
+    WorldData.addBlock(1, "stone", pos);
   });
 
   document.getElementById("addVehicle")?.addEventListener("click", () => {
@@ -54,6 +75,11 @@ export function startEditor(app: HTMLElement) {
 
   document.getElementById("addExplosive")?.addEventListener("click", () => {
     new Explosive(scene, new THREE.Vector3(0, 1, 0));
+  });
+
+  document.getElementById("resetWorld")?.addEventListener("click", () => {
+    WorldData.reset();
+    location.reload();
   });
 
   function animate() {

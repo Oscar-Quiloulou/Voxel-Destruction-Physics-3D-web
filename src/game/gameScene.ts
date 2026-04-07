@@ -4,6 +4,8 @@ import { physics } from "./PhysicsEngine";
 import { Player } from "./player";
 import { Explosive } from "./explosives";
 import { ImpulseGun, KineticHammer, CapsuleLauncher } from "./weapons";
+import { BuildingStructure } from "./buildings";
+import { WorldData } from "./world";
 
 export function startGame(app: HTMLElement) {
   app.innerHTML = "";
@@ -38,7 +40,15 @@ export function startGame(app: HTMLElement) {
   // --- PLAYER FPS ---
   const player = new Player(scene, app);
 
-  // --- WEAPONS ---
+  // --- STRUCTURE DU MONDE ---
+  const structure = new BuildingStructure(scene);
+
+  // Charger les blocs construits dans l’éditeur
+  WorldData.blocks.forEach(b => {
+    structure.addBlock(b.size, b.material, b.position.clone());
+  });
+
+  // --- ARMES ---
   const impulseGun = new ImpulseGun(scene);
   const hammer = new KineticHammer(scene);
   const launcher = new CapsuleLauncher(scene);
@@ -48,6 +58,7 @@ export function startGame(app: HTMLElement) {
   window.addEventListener("keydown", e => keys[e.key] = true);
   window.addEventListener("keyup", e => keys[e.key] = false);
 
+  // Tir
   window.addEventListener("mousedown", () => {
     impulseGun.fire(
       player.camera.position.clone(),
@@ -55,11 +66,13 @@ export function startGame(app: HTMLElement) {
     );
   });
 
+  // Marteau
   window.addEventListener("contextmenu", e => {
     e.preventDefault();
     hammer.smash(player.camera.position.clone());
   });
 
+  // Lance-explosifs
   window.addEventListener("keypress", e => {
     if (e.key === "r") {
       launcher.fire(
@@ -72,6 +85,7 @@ export function startGame(app: HTMLElement) {
     }
   });
 
+  // --- LOOP ---
   let last = performance.now();
 
   function loop() {
@@ -88,6 +102,7 @@ export function startGame(app: HTMLElement) {
 
     physics.step(dt);
     player.update();
+    structure.update();
 
     renderer.render(scene, player.camera);
   }
