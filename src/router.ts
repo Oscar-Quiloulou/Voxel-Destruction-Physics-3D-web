@@ -11,7 +11,12 @@ function renderPage() {
 
   switch (route) {
     case "#/":
-      app.innerHTML = `<h1>Accueil</h1><p>Bienvenue dans le Voxel Physics Sandbox.</p>`;
+      app.innerHTML = `
+        <h1>Accueil</h1>
+        <p>Bienvenue dans le Voxel Physics Sandbox.</p>
+        <button onclick="location.hash='#/game'">Jouer</button>
+        <button onclick="location.hash='#/editor'">Éditeur</button>
+      `;
       break;
 
     case "#/game":
@@ -26,10 +31,6 @@ function renderPage() {
       import("./game/editor").then(module => {
         module.startEditor(app);
       });
-      break;
-
-    case "#/about":
-      app.innerHTML = `<h1>À propos</h1><p>Sandbox 3D physique avancée.</p>`;
       break;
 
     default:
