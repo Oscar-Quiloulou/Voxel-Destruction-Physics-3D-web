@@ -6,11 +6,21 @@ import { Ragdoll } from "./ragdoll";
 import { Explosive } from "./explosives";
 import { WorldData } from "./world";
 
+const keys: Record<string, boolean> = {};
+let selectedObject: THREE.Object3D | null = null;
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
 export function startEditor(app: HTMLElement) {
   app.innerHTML = "";
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(70, app.clientWidth / app.clientHeight, 0.1, 1000);
+  const camera = new THREE.PerspectiveCamera(
+    70,
+    app.clientWidth / app.clientHeight,
+    0.1,
+    1000
+  );
   camera.position.set(15, 20, 15);
   camera.lookAt(0, 0, 0);
 
@@ -55,10 +65,13 @@ export function startEditor(app: HTMLElement) {
     <button id="addRagdoll">Ajouter ragdoll</button>
     <button id="addExplosive">Ajouter explosif</button>
     <button id="resetWorld">Reset monde</button>
+    <p>Flèches : déplacer l’objet sélectionné</p>
+    <p>A / E : rotation Y</p>
+    <p>Suppr : supprimer l’objet</p>
   `;
   app.appendChild(ui);
 
-  // Ajouter bloc
+  // Ajout bloc
   document.getElementById("addBlock")?.addEventListener("click", () => {
     const pos = new THREE.Vector3(0, 1, 0);
     structure.addBlock(1, "stone", pos);
@@ -82,8 +95,44 @@ export function startEditor(app: HTMLElement) {
     location.reload();
   });
 
+  // Gestion des touches
+  window.addEventListener("keydown", e => (keys[e.key] = true));
+  window.addEventListener("keyup", e => (keys[e.key] = false));
+
+  // Sélection d’objet
+  renderer.domElement.addEventListener("mousedown", e => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    if (intersects.length > 0) {
+      selectedObject = intersects[0].object;
+      console.log("Objet sélectionné :", selectedObject);
+    }
+  });
+
   function animate() {
     requestAnimationFrame(animate);
+
+    // Déplacement / rotation / suppression de l’objet sélectionné
+    if (selectedObject) {
+      if (keys["ArrowUp"]) selectedObject.position.z -= 0.1;
+      if (keys["ArrowDown"]) selectedObject.position.z += 0.1;
+      if (keys["ArrowLeft"]) selectedObject.position.x -= 0.1;
+      if (keys["ArrowRight"]) selectedObject.position.x += 0.1;
+
+      if (keys["a"]) selectedObject.rotation.y += 0.05;
+      if (keys["e"]) selectedObject.rotation.y -= 0.05;
+
+      if (keys["Delete"]) {
+        scene.remove(selectedObject);
+        selectedObject = null;
+      }
+    }
+
     voxelEngine.update();
     structure.update();
     renderer.render(scene, camera);

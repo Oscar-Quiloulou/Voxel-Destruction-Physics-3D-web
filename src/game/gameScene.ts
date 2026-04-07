@@ -10,13 +10,50 @@ import { WorldData } from "./world";
 export function startGame(app: HTMLElement) {
   app.innerHTML = "";
 
+  // --- HUD ---
+  const hud = document.createElement("div");
+  hud.style.position = "absolute";
+  hud.style.top = "0";
+  hud.style.left = "0";
+  hud.style.width = "100%";
+  hud.style.height = "100%";
+  hud.style.pointerEvents = "none";
+  hud.style.zIndex = "50";
+  hud.innerHTML = `
+    <div style="
+      position:absolute;
+      top:50%;
+      left:50%;
+      width:10px;
+      height:10px;
+      margin-left:-5px;
+      margin-top:-5px;
+      background:white;
+      border-radius:50%;
+    "></div>
+
+    <button id="detonator" style="
+      position:absolute;
+      bottom:20px;
+      left:50%;
+      transform:translateX(-50%);
+      padding:10px 20px;
+      font-size:18px;
+      pointer-events:auto;
+    ">💥 Détonateur</button>
+  `;
+  app.appendChild(hud);
+
+  // --- SCENE ---
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x222222);
 
+  // --- RENDERER ---
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(app.clientWidth, app.clientHeight);
   app.appendChild(renderer.domElement);
 
+  // --- LIGHTING ---
   const light = new THREE.DirectionalLight(0xffffff, 1);
   light.position.set(10, 20, 10);
   scene.add(light);
@@ -24,13 +61,24 @@ export function startGame(app: HTMLElement) {
   const ambient = new THREE.AmbientLight(0xffffff, 0.4);
   scene.add(ambient);
 
-  // --- SOL ---
+  // --- SOL AVEC TEXTURE ---
+  const textureLoader = new THREE.TextureLoader();
+  const groundTexture = textureLoader.load("/textures/ground.jpg");
+  groundTexture.wrapS = THREE.RepeatWrapping;
+  groundTexture.wrapT = THREE.RepeatWrapping;
+  groundTexture.repeat.set(50, 50);
+
   const groundGeo = new THREE.PlaneGeometry(500, 500);
-  const groundMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+  const groundMat = new THREE.MeshStandardMaterial({
+    map: groundTexture
+  });
+
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
   scene.add(ground);
 
+  // --- SOL PHYSIQUE ---
   const groundShape = new CANNON.Plane();
   const groundBody = new CANNON.Body({ mass: 0 });
   groundBody.addShape(groundShape);
@@ -53,12 +101,16 @@ export function startGame(app: HTMLElement) {
   const hammer = new KineticHammer(scene);
   const launcher = new CapsuleLauncher(scene);
 
+  // --- EXPLOSIFS REGISTRÉS POUR LE DÉTONATEUR ---
+  const explosives: Explosive[] = [];
+
+  // --- INPUT ---
   const keys: Record<string, boolean> = {};
 
-  window.addEventListener("keydown", e => keys[e.key] = true);
-  window.addEventListener("keyup", e => keys[e.key] = false);
+  window.addEventListener("keydown", e => (keys[e.key] = true));
+  window.addEventListener("keyup", e => (keys[e.key] = false));
 
-  // Tir
+  // Tir (clic gauche)
   window.addEventListener("mousedown", () => {
     impulseGun.fire(
       player.camera.position.clone(),
@@ -66,23 +118,29 @@ export function startGame(app: HTMLElement) {
     );
   });
 
-  // Marteau
+  // Marteau (clic droit)
   window.addEventListener("contextmenu", e => {
     e.preventDefault();
     hammer.smash(player.camera.position.clone());
   });
 
-  // Lance-explosifs
+  // Lance-explosifs (touche R) + saut
   window.addEventListener("keypress", e => {
     if (e.key === "r") {
-      launcher.fire(
+      const ex = launcher.fire(
         player.camera.position.clone(),
         player.camera.getWorldDirection(new THREE.Vector3())
       );
+      if (ex) explosives.push(ex);
     }
     if (e.key === " ") {
       player.jump();
     }
+  });
+
+  // Détonateur (HUD)
+  document.getElementById("detonator")?.addEventListener("click", () => {
+    explosives.forEach(ex => ex.explode(scene));
   });
 
   // --- LOOP ---
@@ -95,14 +153,14 @@ export function startGame(app: HTMLElement) {
     const dt = (now - last) / 1000;
     last = now;
 
-// MOVEMENT (ZQSD + flèches)
-if (keys["z"] || keys["ArrowUp"]) player.moveForward(dt);
-if (keys["s"] || keys["ArrowDown"]) player.moveBackward(dt);
-if (keys["q"] || keys["ArrowLeft"]) player.moveLeft(dt);
-if (keys["d"] || keys["ArrowRight"]) player.moveRight(dt);
-
+    // DÉPLACEMENT FPS (ZQSD + FLÈCHES)
+    if (keys["z"] || keys["ArrowUp"]) player.moveForward(dt);
+    if (keys["s"] || keys["ArrowDown"]) player.moveBackward(dt);
+    if (keys["q"] || keys["ArrowLeft"]) player.moveLeft(dt);
+    if (keys["d"] || keys["ArrowRight"]) player.moveRight(dt);
 
     physics.step(dt);
+
     player.update();
     structure.update();
 
